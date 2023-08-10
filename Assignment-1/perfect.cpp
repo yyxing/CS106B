@@ -6,7 +6,7 @@
  */
 #include "console.h"
 #include <iostream>
-#include "testing/SimpleTest.h"
+#include "../testing/SimpleTest.h"
 #include <math.h>
 using namespace std;
 
@@ -190,4 +190,3 @@ PROVIDED_TEST("Time trials of findPerfects on doubling input sizes") {
 }
 
 // TODO: add your student test cases here
-
