@@ -41,7 +41,7 @@ void duplicateNegatives(Queue<int>& q) {
 // WARNING: the given code is buggy. See exercise writeup for more
 // information on how to test and diagnose.
 int sumStack(Stack<int> s) {
-    int total = s.pop();
+    int total = 0;
     while (!s.isEmpty()) {
         total += s.pop();
     }
