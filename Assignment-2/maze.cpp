@@ -23,6 +23,13 @@ using namespace std;
 Set<GridLocation> generateValidMoves(Grid<bool>& maze, GridLocation cur) {
     Set<GridLocation> neighbors;
     /* TODO: Fill in the remainder of this function. */
+    int x = cur.row, y = cur.col;
+    if (!maze[x][y]) return neighbors;
+    int m = maze.numRows(), n = maze.numCols();
+    if (x < m - 1 && maze[x + 1][y]) neighbors.add({x + 1, y});
+    if (x > 0 && maze[x - 1][y]) neighbors.add({x - 1, y});
+    if (y < n - 1 && maze[x][y + 1]) neighbors.add({x, y + 1});
+    if (y > 0 && maze[x][y - 1]) neighbors.add({x, y - 1});
     return neighbors;
 }
 
@@ -143,6 +150,37 @@ PROVIDED_TEST("generateValidMoves on corner of 2x2 grid with walls") {
     Set<GridLocation> expected = {{1, 0}};
 
     EXPECT_EQUAL(generateValidMoves(maze, corner), expected);
+}
+
+// TODO: add your test cases here
+STUDENT_TEST("generateValidMoves on location in the center of 5x3 grid with no walls") {
+    Grid<bool> maze = {{true, true, true, false, true},
+                       {true, true, false, false, true},
+                       {true, true, true, false, true}};
+    GridLocation center = {1, 1};
+    Set<GridLocation> expected = {{0, 1}, {1, 0}, {2, 1}};
+
+    EXPECT_EQUAL(generateValidMoves(maze, center), expected);
+}
+
+STUDENT_TEST("generateValidMoves on location in the center of 5x3 grid with no walls") {
+    Grid<bool> maze = {{true, true, true, false, true},
+                       {true, false, false, false, true},
+                       {true, true, true, false, true}};
+    GridLocation center = {1, 1};
+    Set<GridLocation> expected = {};
+
+    EXPECT_EQUAL(generateValidMoves(maze, center), expected);
+}
+
+STUDENT_TEST("generateValidMoves on location in the center of 5x3 grid with no walls") {
+    Grid<bool> maze = {{true, true, true},
+                       {true, false, false},
+                       {true, true, true}};
+    GridLocation center = {0, 2};
+    Set<GridLocation> expected = {{0, 1}};
+
+    EXPECT_EQUAL(generateValidMoves(maze, center), expected);
 }
 
 PROVIDED_TEST("validatePath on correct solution") {
