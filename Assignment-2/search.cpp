@@ -19,6 +19,9 @@ using namespace std;
 // behavior of the function and how you implemented this behavior
 string cleanToken(string s)
 {
+    for (int i = 0 ; i < s.length() ; ++i) {
+      char c = s.at(i);
+    }
     return s;
 }
 
