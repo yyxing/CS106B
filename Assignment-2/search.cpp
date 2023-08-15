@@ -19,15 +19,18 @@ using namespace std;
 // behavior of the function and how you implemented this behavior
 string cleanToken(string s)
 {
-    if (ispunct(s[0])) s.erase(0, 1);
-    if (ispunct(s[s.length() - 1])) s.erase(s.length() - 1, 1);
+    int start = 0, end = 0;
+    while (end < s.length() && ispunct(s[end])) end++;
+    s = s.erase(start, end);
+    start = end = s.length() - 1;
+    while (end > 0 && ispunct(s[end])) end--;
+    s = s.erase(end + 1, start - end);
     bool flag = false;
     for (int i = 0 ; i < s.length() && !flag; ++i) {
         if (isalpha(s[i])) {
             flag = true;
         }
     }
-    cout << flag << endl;
     return flag ? toLowerCase(s) : "";
 }
 
@@ -37,10 +40,8 @@ Set<string> gatherTokens(string text)
 {
     Set<string> tokens;
     Vector<string> words = stringSplit(text, " ");
-    cout << words << endl;
     for (auto& word : words) {
         string token = cleanToken(word);
-        cout << token << endl;
         if (token != "")
             tokens.add(token);
     }
@@ -57,14 +58,26 @@ int buildIndex(string dbfile, Map<string, Set<string>>& index)
         error("Cannot open file named " + dbfile);
 
     Vector<string> lines;
+    int count = 0;
     readEntireFile(in, lines);
     for (int i = 0 ; i < lines.size() ; i = i + 2) {
-        string key = lines[i];
-        string value = lines[i + 1];
-        Set<string> tokens = gatherTokens(value);
-        index.put(key, tokens);
+        string website = lines[i];
+        string words = lines[i + 1];
+        count++;
+        Set<string> tokens = gatherTokens(words);
+        for (auto& token : tokens) {
+            if (!index.containsKey(token)) {
+                Set<string> set;
+                set.add(website);
+                index.put(token, set);
+            }else {
+                auto set = index.get(token);
+                set.add(website);
+                index.put(token, set);
+            }
+        }
     }
-    return index.size();
+    return count;
 }
 
 // TODO: Add a function header comment here to explain the
@@ -73,6 +86,20 @@ Set<string> findQueryMatches(Map<string, Set<string>>& index, string query)
 {
     Set<string> result;
     // TODO: your code here
+    Vector<string> words = stringSplit(query, " ");
+    for (auto &word : words) {
+        if (word[0] == '+') {
+            word = cleanToken(word);
+            result.intersect(index.get(word));
+        }else if(word[0] == '-') {
+            word = cleanToken(word);
+            result.difference(index.get(word));
+        }else {
+            word = cleanToken(word);
+            result.unionWith(index.get(word));
+        }
+    }
+    cout << index << endl;
     return result;
 }
 
@@ -81,9 +108,23 @@ Set<string> findQueryMatches(Map<string, Set<string>>& index, string query)
 void searchEngine(string dbfile)
 {
     // TODO: your code here
+    Map<string, Set<string>> index;
+    buildIndex(dbfile, index);
+    string query;
+    while(true) {
+        cin >> query;
+        if(query == "") break;
+        Set<string> result = findQueryMatches(index, query);
+        cout << result << endl;
+    }
 }
 
 /* * * * * * Test Cases * * * * * */
+
+PROVIDED_TEST("cleanToken on strings with some punctuation at beginning and end") {
+    EXPECT_EQUAL(cleanToken("///hello///"), "hello");
+    EXPECT_EQUAL(cleanToken("~woRLD!"), "world");
+}
 
 PROVIDED_TEST("cleanToken on strings with no punctuation at beginning or end") {
     EXPECT_EQUAL(cleanToken("hello"), "hello");
@@ -92,7 +133,7 @@ PROVIDED_TEST("cleanToken on strings with no punctuation at beginning or end") {
 }
 
 PROVIDED_TEST("cleanToken on strings with some punctuation at beginning and end") {
-    EXPECT_EQUAL(cleanToken("/hello/"), "hello");
+    EXPECT_EQUAL(cleanToken("///hello///"), "hello");
     EXPECT_EQUAL(cleanToken("~woRLD!"), "world");
 }
 
@@ -126,26 +167,43 @@ PROVIDED_TEST("buildIndex from tiny.txt, 4 pages, 11 unique tokens") {
     EXPECT(index.containsKey("fish"));
 }
 
-//PROVIDED_TEST("findQueryMatches from tiny.txt, single word query") {
-//    Map<string, Set<string>> index;
-//    buildIndex("res/tiny.txt", index);
-//    Set<string> matchesRed = findQueryMatches(index, "red");
-//    EXPECT_EQUAL(matchesRed.size(), 2);
-//    EXPECT(matchesRed.contains("www.dr.seuss.net"));
-//    Set<string> matchesHippo = findQueryMatches(index, "hippo");
-//    EXPECT(matchesHippo.isEmpty());
-//}
+PROVIDED_TEST("findQueryMatches from tiny.txt, single word query") {
+    Map<string, Set<string>> index;
+    buildIndex("res/tiny.txt", index);
+    Set<string> matchesRed = findQueryMatches(index, "red");
+    EXPECT_EQUAL(matchesRed.size(), 2);
+    EXPECT(matchesRed.contains("www.dr.seuss.net"));
+    Set<string> matchesHippo = findQueryMatches(index, "hippo");
+    EXPECT(matchesHippo.isEmpty());
+}
 
-//PROVIDED_TEST("findQueryMatches from tiny.txt, compound queries") {
-//    Map<string, Set<string>> index;
-//    buildIndex("res/tiny.txt", index);
-//    Set<string> matchesRedOrFish = findQueryMatches(index, "red fish");
-//    EXPECT_EQUAL(matchesRedOrFish.size(), 4);
-//    Set<string> matchesRedAndFish = findQueryMatches(index, "red +fish");
-//    EXPECT_EQUAL(matchesRedAndFish.size(), 1);
-//    Set<string> matchesRedWithoutFish = findQueryMatches(index, "red -fish");
-//    EXPECT_EQUAL(matchesRedWithoutFish.size(), 1);
-//}
+PROVIDED_TEST("findQueryMatches from tiny.txt, compound queries") {
+    Map<string, Set<string>> index;
+    buildIndex("res/tiny.txt", index);
+    Set<string> matchesRedOrFish = findQueryMatches(index, "red fish");
+    EXPECT_EQUAL(matchesRedOrFish.size(), 4);
+    Set<string> matchesRedAndFish = findQueryMatches(index, "red +fish");
+    EXPECT_EQUAL(matchesRedAndFish.size(), 1);
+    Set<string> matchesRedWithoutFish = findQueryMatches(index, "red -fish");
+    EXPECT_EQUAL(matchesRedWithoutFish.size(), 1);
+}
 
+// TODO: add your test cases here
+STUDENT_TEST("test for cleanToken") {
+    EXPECT_EQUAL(cleanToken("/hello/,.;?.."), "hello");
+    EXPECT_EQUAL(cleanToken("wo!RLD!"), "wo!rld");
+    EXPECT_EQUAL(cleanToken("/hel..lo/"), "hel..lo");
+    EXPECT_EQUAL(cleanToken("/./."), "");
+
+    Map<string, Set<string>> index;
+    int nPages = buildIndex("res/website.txt", index);
+    EXPECT_EQUAL(nPages, 32);
+    EXPECT_EQUAL(index.size(), 3875);
+    EXPECT(index.containsKey("that"));
+    EXPECT(index.containsKey("cs106b"));
+
+    //    TIME_OPERATION()
+    searchEngine("res/website.txt");
+}
 
 // TODO: add your test cases here
