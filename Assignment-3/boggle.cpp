@@ -24,18 +24,20 @@ int points(string str) {
     return str.length() - 3;
 }
 
-int dfs(Grid<char>& board, Lexicon& lex,Set<char> visit, string str, int x, int y) {
+int dfs(Grid<char>& board, Lexicon& lex,Set<int> visit, string str, int x, int y) {
     int rows = board.numRows(), cols = board.numCols();
-    if (x >= rows || y >= cols || x < 0 || y > 0) return 0;
+    if (x >= rows || y >= cols || x < 0 || y < 0) return 0;
     char v = board.get({x, y});
-    if (visit.contains(v)) return 0;
+    if (v == '_') return 0;
+    if (visit.contains(x * cols + y)) return 0;
     if (!lex.containsPrefix(str)) {
         return 0;
     }
     if (lex.contains(str)) {
         return points(str);
     }
-    visit.add(v);
+    visit.add(x * cols + y);
+    cout << str << endl;
     return dfs(board, lex, visit, str + board.get({x, y}), x - 1, y - 1) + dfs(board, lex, visit, str + board.get({x, y}), x - 1, y) +
         dfs(board, lex, visit, str + board.get({x, y}), x - 1, y + 1) + dfs(board, lex, visit, str + board.get({x, y}), x, y + 1) +
         dfs(board, lex, visit, str + board.get({x, y}), x + 1, y + 1) + dfs(board, lex, visit, str + board.get({x, y}), x + 1, y) +
@@ -52,7 +54,8 @@ int scoreBoard(Grid<char>& board, Lexicon& lex) {
     int rows = board.numRows(), cols = board.numCols();
     for (int i = 0 ; i < rows ; i++) {
         for (int j = 0 ; j < cols ; j++) {
-            scores += dfs(board, lex, {}, "", i, j);
+            if (board.get({i, j}) != '_')
+                scores += dfs(board, lex, {}, "", i, j);
         }
     }
     return scores;
@@ -89,13 +92,13 @@ PROVIDED_TEST("Test scoreBoard, board contains no words, score of zero") {
     EXPECT_EQUAL(scoreBoard(board, sharedLexicon()), 0);
 }
 
-//PROVIDED_TEST("Test scoreBoard, board contains one word, score of 1") {
-//    Grid<char> board = {{'C','_','_','_'},
-//                        {'Z','_','_','_'},
-//                        {'_','A','_','_'},
-//                        {'_','_','R','_'}};
-//    EXPECT_EQUAL(scoreBoard(board, sharedLexicon()), 1);
-//}
+PROVIDED_TEST("Test scoreBoard, board contains one word, score of 1") {
+    Grid<char> board = {{'C','_','_','_'},
+                        {'Z','_','_','_'},
+                        {'_','A','_','_'},
+                        {'_','_','R','_'}};
+    EXPECT_EQUAL(scoreBoard(board, sharedLexicon()), 1);
+}
 
 //PROVIDED_TEST("Test scoreBoard, alternate paths for same word, still score of 1") {
 //    Grid<char> board = {{'C','C','_','_'},
