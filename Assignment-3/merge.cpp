@@ -15,8 +15,38 @@ using namespace std;
  */
 Queue<int> binaryMerge(Queue<int> a, Queue<int> b) {
     Queue<int> result;
-    /* TODO: Implement this function. */
-
+    if (a.isEmpty()) return b;
+    if (b.isEmpty()) return a;
+    int lastA = a.peek(), lastB = b.peek();
+    while (!a.isEmpty() && !b.isEmpty()) {
+        if (a.peek() > b.peek()) {
+            if (b.peek() < lastB) {
+                error("the order is not correct!");
+            }
+            lastB = b.dequeue();
+            result.enqueue(lastB);
+        }else {
+            if (a.peek() < lastA) {
+                error("the order is not correct!");
+            }
+            lastA = a.dequeue();
+            result.enqueue(lastA);
+        }
+    }
+    while (!a.isEmpty()) {
+        if (a.peek() < lastA) {
+            error("the order is not correct!");
+        }
+        lastA = a.dequeue();
+        result.enqueue(lastA);
+    }
+    while (!b.isEmpty()) {
+        if (b.peek() < lastB) {
+            error("the order is not correct!");
+        }
+        lastB = b.dequeue();
+        result.enqueue(lastB);
+    }
     return result;
 }
 
@@ -44,7 +74,13 @@ Queue<int> naiveMultiMerge(Vector<Queue<int>>& all) {
 Queue<int> recMultiMerge(Vector<Queue<int>>& all) {
     Queue<int> result;
     /* TODO: Implement this function. */
-    return result;
+    if (all.isEmpty()) return result;
+    if (all.size() == 1) return all[0];
+    Vector<Queue<int>> left, right;
+    int n = all.size(), k = all.size() / 2;
+    left = all.subList(0, k);
+    right = all.subList(k, n - k);
+    return binaryMerge(recMultiMerge(left), recMultiMerge(right));
 }
 
 
