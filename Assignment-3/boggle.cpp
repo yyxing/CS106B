@@ -24,24 +24,28 @@ int points(string str) {
     return str.length() - 3;
 }
 
-int dfs(Grid<char>& board, Lexicon& lex,Set<int> visit, string str, int x, int y) {
+void dfs(Grid<char>& board, Lexicon& lex,Set<GridLocation> visit, Set<string>& words,string str, int x, int y) {
     int rows = board.numRows(), cols = board.numCols();
-    if (x >= rows || y >= cols || x < 0 || y < 0) return 0;
-    char v = board.get({x, y});
-    if (v == '_') return 0;
-    if (visit.contains(x * cols + y)) return 0;
-    if (!lex.containsPrefix(str)) {
-        return 0;
+    if (!board.inBounds(x, y) || !lex.containsPrefix(str)) {
+        return;
     }
-    if (lex.contains(str)) {
-        return points(str);
+    char v = toLowerCase(board.get({x, y}));
+
+    if (str.length() > 3 && lex.contains(str)) {
+        words.add(str);
     }
-    visit.add(x * cols + y);
-    cout << str << endl;
-    return dfs(board, lex, visit, str + board.get({x, y}), x - 1, y - 1) + dfs(board, lex, visit, str + board.get({x, y}), x - 1, y) +
-        dfs(board, lex, visit, str + board.get({x, y}), x - 1, y + 1) + dfs(board, lex, visit, str + board.get({x, y}), x, y + 1) +
-        dfs(board, lex, visit, str + board.get({x, y}), x + 1, y + 1) + dfs(board, lex, visit, str + board.get({x, y}), x + 1, y) +
-        dfs(board, lex, visit, str + board.get({x, y}), x + 1, y - 1) + dfs(board, lex, visit, str + board.get({x, y}), x, y - 1);
+    GridLocation loc = {x, y};
+    if (visit.contains(loc)) return;
+    visit.add(loc);
+    dfs(board, lex, visit, words, str + v, x - 1, y - 1);
+    dfs(board, lex, visit, words, str + v, x - 1, y);
+    dfs(board, lex, visit, words, str + v, x - 1, y + 1);
+    dfs(board, lex, visit, words, str + v, x, y + 1);
+    dfs(board, lex, visit, words, str + v, x + 1, y + 1);
+    dfs(board, lex, visit, words, str + v, x + 1, y);
+    dfs(board, lex, visit, words, str + v, x + 1, y - 1);
+    dfs(board, lex, visit, words, str + v, x, y - 1);
+    visit.remove(loc);
 }
 
 /*
@@ -52,11 +56,15 @@ int scoreBoard(Grid<char>& board, Lexicon& lex) {
     /* TODO: Implement this function. */
     int scores = 0;
     int rows = board.numRows(), cols = board.numCols();
+    Set<string> words = {};
     for (int i = 0 ; i < rows ; i++) {
         for (int j = 0 ; j < cols ; j++) {
             if (board.get({i, j}) != '_')
-                scores += dfs(board, lex, {}, "", i, j);
+                dfs(board, lex, {}, words, "", i, j);
         }
+    }
+    for (auto& word : words) {
+        scores += points(word);
     }
     return scores;
 }
@@ -100,48 +108,48 @@ PROVIDED_TEST("Test scoreBoard, board contains one word, score of 1") {
     EXPECT_EQUAL(scoreBoard(board, sharedLexicon()), 1);
 }
 
-//PROVIDED_TEST("Test scoreBoard, alternate paths for same word, still score of 1") {
-//    Grid<char> board = {{'C','C','_','_'},
-//                        {'C','Z','C','_'},
-//                        {'_','A','_','_'},
-//                        {'R','_','R','_'}};
-//    EXPECT_EQUAL(scoreBoard(board, sharedLexicon()), 1);
-//}
+PROVIDED_TEST("Test scoreBoard, alternate paths for same word, still score of 1") {
+    Grid<char> board = {{'C','C','_','_'},
+                        {'C','Z','C','_'},
+                        {'_','A','_','_'},
+                        {'R','_','R','_'}};
+    EXPECT_EQUAL(scoreBoard(board, sharedLexicon()), 1);
+}
 
-//PROVIDED_TEST("Test scoreBoard, small number of words in corner of board") {
-//    Grid<char> board = {{'L','I','_','_'},
-//                        {'M','E','_','_'},
-//                        {'_','S','_','_'},
-//                        {'_','_','_','_'}};
-//    Set<string> words = {"SMILE", "LIMES", "MILES", "MILE", "MIES", "LIME", "LIES", "ELMS", "SEMI"};
+PROVIDED_TEST("Test scoreBoard, small number of words in corner of board") {
+    Grid<char> board = {{'L','I','_','_'},
+                        {'M','E','_','_'},
+                        {'_','S','_','_'},
+                        {'_','_','_','_'}};
+    Set<string> words = {"SMILE", "LIMES", "MILES", "MILE", "MIES", "LIME", "LIES", "ELMS", "SEMI"};
 
-//    EXPECT_EQUAL(scoreBoard(board, sharedLexicon()),  2 + 2 + 2 + 1 + 1 + 1 + 1 + 1 + 1);
-//}
+    EXPECT_EQUAL(scoreBoard(board, sharedLexicon()),  2 + 2 + 2 + 1 + 1 + 1 + 1 + 1 + 1);
+}
 
-//PROVIDED_TEST("Test scoreBoard, full board, small number of words") {
-//    Grid<char> board = {{'E','Z','R','R'},
-//                        {'O','H','I','O'},
-//                        {'N','J','I','H'},
-//                        {'Y','A','H','O'}};
-//    Set<string> words = { "HORIZON", "OHIA", "ORZO", "JOHN", "HAJI"};
+PROVIDED_TEST("Test scoreBoard, full board, small number of words") {
+    Grid<char> board = {{'E','Z','R','R'},
+                        {'O','H','I','O'},
+                        {'N','J','I','H'},
+                        {'Y','A','H','O'}};
+    Set<string> words = { "HORIZON", "OHIA", "ORZO", "JOHN", "HAJI"};
 
-//    EXPECT_EQUAL(scoreBoard(board, sharedLexicon()), 4 + 1 + 1 + 1 + 1);
-//}
+    EXPECT_EQUAL(scoreBoard(board, sharedLexicon()), 4 + 1 + 1 + 1 + 1);
+}
 
-//PROVIDED_TEST("Test scoreBoard, full board, medium number of words") {
-//    Grid<char> board = {{'O','T','H','X'},
-//                        {'T','H','T','P'},
-//                        {'S','S','F','E'},
-//                        {'N','A','L','T'}};
+PROVIDED_TEST("Test scoreBoard, full board, medium number of words") {
+    Grid<char> board = {{'O','T','H','X'},
+                        {'T','H','T','P'},
+                        {'S','S','F','E'},
+                        {'N','A','L','T'}};
 
-//    EXPECT_EQUAL(scoreBoard(board, sharedLexicon()), 76);
-//}
+    EXPECT_EQUAL(scoreBoard(board, sharedLexicon()), 76);
+}
 
-//PROVIDED_TEST("Test scoreBoard, full board, large number of words") {
-//    Grid<char> board = {{'E','A','A','R'},
-//                        {'L','V','T','S'},
-//                        {'R','A','A','N'},
-//                        {'O','I','S','E'}};
+PROVIDED_TEST("Test scoreBoard, full board, large number of words") {
+    Grid<char> board = {{'E','A','A','R'},
+                        {'L','V','T','S'},
+                        {'R','A','A','N'},
+                        {'O','I','S','E'}};
 
-//    EXPECT_EQUAL(scoreBoard(board, sharedLexicon()), 234);
-//}
+    EXPECT_EQUAL(scoreBoard(board, sharedLexicon()), 234);
+}
